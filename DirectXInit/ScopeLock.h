@@ -21,14 +21,30 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-//Make class independent of context through reference data member
-class ScopeLock
+
+class Uncopyable
+{
+public:
+	Uncopyable() {};
+private:
+	Uncopyable& operator=(const Uncopyable&);
+	Uncopyable(const Uncopyable&);
+};
+
+class ScopeLock : public Uncopyable
 {
 
+public:
+	ScopeLock(HANDLE &m);
+	~ScopeLock();
+	//No copy operator for you
+	ScopeLock& operator=(const ScopeLock&);
+
+private:
 	HANDLE &mutexHandle;
 
-public:
-	ScopeLock(HANDLE &m) throw() ;
-	~ScopeLock() throw() ;
 
+
+	//No copy constructor for you
+	ScopeLock(const ScopeLock&);
 };

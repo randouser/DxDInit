@@ -27,10 +27,18 @@ ScopeLock::ScopeLock(HANDLE &m) :
 	mutexHandle(m)
 {
 	if (mutexHandle <= 0)
-		throw std::exception("Null mutex handle");
+#ifdef _DEBUG
+		_CrtDbgBreak();
+#else
+		return;
+#endif
 	else if (WaitForSingleObject(mutexHandle, 2000))
 	{
-		throw std::exception("Timed out waiting for mutex");
+#ifdef _DEBUG
+		_CrtDbgBreak();
+#else
+		return;
+#endif
 	}
 }
 

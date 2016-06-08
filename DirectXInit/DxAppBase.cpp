@@ -172,7 +172,11 @@ bool DxAppBase::ProcWndInit()
 
 	//Get window rectangle dimensions based on requested client area dimensions.
 	RECT r = { 0, 0, mClientWidth, mClientHeight };
-	AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
+	if (!AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE))
+	{
+		MessageBox(NULL, _T("AdjustWindowRect failed."), NULL, MB_OK);
+		return false;
+	}
 
 	int width = r.right - r.left;
 	int height = r.bottom - r.top;
@@ -313,7 +317,7 @@ LRESULT DxAppBase::WndMsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		else if (waitResult != 0)
 		{
-			return -waitResult;
+			return (LONG_PTR)-waitResult;
 		}
 
 		mClientWidth = LOWORD(lParam);

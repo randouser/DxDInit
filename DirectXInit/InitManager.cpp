@@ -38,19 +38,12 @@ Inspired, and in some cases copied, from Frank D. Luna's book "Intro to game pro
 inline bool COMRelease(IUnknown *targetCOM)
 {
 
-	__try
-	{
-		if (targetCOM <= 0)
-			return false;
-		else
-			targetCOM->Release();
-		targetCOM = NULL;
-		return true;
-	}
-	__finally
-	{
+	if (targetCOM <= 0)
 		return false;
-	}
+	else
+		targetCOM->Release();
+	targetCOM = NULL;
+	return true;
 
 }
 
@@ -84,7 +77,7 @@ HRESULT DirectXManager::CreateDeviceAndContext()
 	HRESULT retRes = D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
 
 		//Specify debug flag if in debug mode...
-#ifdef DEBUG
+#ifdef _DEBUG
 		D3D11_CREATE_DEVICE_DEBUG
 #else
 		NULL
@@ -103,8 +96,9 @@ HRESULT DirectXManager::CreateDeviceAndContext()
 		mgrState = STATE_INIT_ERROR;
 		return retRes;
 	}
-	else if (highestFeatureLevel != D3D_FEATURE_LEVEL_11_0)
+	else if (highestFeatureLevel < D3D_FEATURE_LEVEL_11_0)
 	{
+		lastValidState = mgrState = STATE_MGR_INIT;
 		mgrState = STATE_INIT_ERROR;
 		return retRes;
 	}
@@ -121,7 +115,6 @@ HRESULT DirectXManager::Check4xMSAASupport()
 
 	//Lock is released in destructor when going out of context
 	ScopeLock lock(mutexHandle);
-
 
 	UINT retQuality = 0;
 	HRESULT retRes = curDevice->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 4, &retQuality);
@@ -142,7 +135,7 @@ HRESULT DirectXManager::Check4xMSAASupport()
 HRESULT DirectXManager::DescribeSwapChain(bool switchMSAA, bool fullScreen, UINT width, UINT height, HWND nCurWnd)
 {
 	//Add support for fullscreen later, will need to refactor a bit
-	if (mutexHandle <= 0 || mgrState != STATE_MGR_INIT || fullScreen)
+	if (mutexHandle <= 0 || mgrState != STATE_MGR_INIT)
 	{
 		return -1;
 	}
@@ -268,11 +261,16 @@ HRESULT DirectXManager::CreateSwapChain()
 	IDXGISwapChain *mSwapChain = NULL;
 	if (FAILED(dxgiFactory->CreateSwapChain(curDevice, &curSwapChainDesc, &mSwapChain)))
 	{
-		//Free the other interfaces we have succesfully aqquired
 		COMRelease(dxgiDevice);
 		COMRelease(dxgiAdapter);
 		COMRelease(dxgiFactory);
+		mgrState = STATE_INIT_ERROR;
+		return -1;
 	}
+
+	COMRelease(dxgiDevice);
+	COMRelease(dxgiAdapter);
+	COMRelease(dxgiFactory);
 
 	curSwapChain = mSwapChain;
 	lastValidState = mgrState = STATE_MGR_SWAP_CHAIN_CREATED;
@@ -740,6 +738,8 @@ void GameTimer::Stop()
 	if (!isValid)
 		return;
 
+	ScopeLock lock(timerMutex);
+
 	//If stopped, return
 	if (!mStopped)
 	{
@@ -764,6 +764,8 @@ void GameTimer::Start()
 	{
 		return;
 	}
+
+	ScopeLock lock(timerMutex);
 
 	__int64 startTime;
 
@@ -797,6 +799,9 @@ void GameTimer::Start()
 //And finally TotalTime, returns time since Reset was called (not counting pause time)
 float GameTimer::TotalTime() const
 {
+
+	//we care about logical constness rather than bitwise constness..
+	ScopeLock lock(static_cast<HANDLE>(timerMutex));
 
 	//If stopped, do not count time passed since stopped.
 	//If we already had a pause, mStopTime - mBaseTime includes paused time, so we subtract paused time from mStopTime

@@ -39,10 +39,6 @@ public:
 	HWND	  ProcWnd()		 const;
 	float	  CurAspectRatio() const;
 
-
-	//We really should make an interface to access this later instead of returning the base object
-	DirectXManager& CurDxMgr() { return _dxMgr; };
-
 	int		  Run();
 
 
