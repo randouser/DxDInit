@@ -44,9 +44,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 
 }
 
-
-
-
 TestDxInit::TestDxInit(HINSTANCE hInstance)
 	: DxAppBase(hInstance)
 {
