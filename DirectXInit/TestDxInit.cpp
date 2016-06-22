@@ -1,4 +1,3 @@
-//#include "stdafx.h"
 //#include "DxAppBase.h"
 //#include <Windows.h>
 //#include <assert.h>

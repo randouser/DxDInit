@@ -16,7 +16,10 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
-Parts inspired by/adapted from Frank D. Lunas' excellent book "Intro to 3D Game Programming w/ DX11"
+Parts inspired by/adapted from/copied from Frank D. Lunas' excellent book "Intro to 3D Game Programming w/ DX11".
+All credit goes to him and his book.
+
+This is a learning project!!!
 
 */
 
