@@ -8,6 +8,7 @@
 #include "d3dx11effect.h"
 #include <xnamath.h>
 #include "BoxDemo.h"
+#include <iostream>
 
 BoxDemo::BoxDemo(HINSTANCE hWnd)
 	: DxAppBase(hWnd), pBoxVertexBuffer(NULL), pBoxIndexBuffer(NULL), pFX(NULL), pTech(NULL),
@@ -203,6 +204,133 @@ void BoxDemo::HandleMouseMove(WPARAM bState, int x, int y)
 
 }
 
+void BoxDemo::BuildGeometryBuffers()
+{
+
+	BoxVertex vertices[] = { 
+		{XMFLOAT3(-1.0f, -1.0f, -1.0f), (const float*)&Colors::White},
+		{XMFLOAT3(-1.0f, +1.0f, -1.0f), (const float*)&Colors::Black},
+		{XMFLOAT3(+1.0f, +1.0f, -1.0f), (const float*)&Colors::Red},
+		{XMFLOAT3(+1.0f, -1.0f, -1.0f), (const float*)&Colors::Green},
+		{XMFLOAT3(-1.0f, -1.0f, +1.0f), (const float*)&Colors::Blue},
+		{XMFLOAT3(-1.0f, +1.0f, +1.0f), (const float*)&Colors::Yellow},
+		{XMFLOAT3(+1.0f, +1.0f, +1.0f), (const float*)&Colors::Cyan},
+		{XMFLOAT3(+1.0f, -1.0f, +1.0f), (const float*)&Colors::Magenta}
+	};
+
+	D3D11_BUFFER_DESC	vbd;
+	ZeroMemory(&vbd, sizeof(D3D11_BUFFER_DESC));
+
+	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbd.ByteWidth = sizeof(BoxVertex) * 8;
+	vbd.CPUAccessFlags = 0;
+	vbd.MiscFlags = 0;
+	vbd.StructureByteStride = 0;
+	vbd.Usage = D3D11_USAGE_IMMUTABLE;
+	
+	D3D11_SUBRESOURCE_DATA vInitData;
+	vInitData.pSysMem = vertices;
+	vInitData.SysMemPitch = vInitData.SysMemSlicePitch = 0;
+
+	_dxMgr.LockMgr();
+
+	//create-a da buffer
+	HR(_dxMgr.CurrentDevice()->CreateBuffer(&vbd, &vInitData, &pBoxVertexBuffer));
+
+	//Create index buffer
+
+	UINT indices[] =
+	{
+		//front face
+		0,1,2,
+		0,2,3,
+
+		//back face
+		4,6,5,
+		4,7,6,
+
+		//left face
+		4,5,1,
+		4,1,0,
+
+		//right face
+		3,2,6,
+		3,6,7,
+
+		//top face
+		1,5,6,
+		1,6,2,
+
+		//bottom face
+		4,0,3,
+		4,3,7
+
+	};
+
+	D3D11_BUFFER_DESC ibd;
+	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ibd.ByteWidth = sizeof(UINT)*36;
+	ibd.CPUAccessFlags = 0;
+	ibd.MiscFlags = 0;
+	ibd.StructureByteStride = 0;
+	ibd.Usage = D3D11_USAGE_IMMUTABLE;
+
+	D3D11_SUBRESOURCE_DATA iBuffData;
+
+	iBuffData.pSysMem = indices;
+	iBuffData.SysMemPitch = iBuffData.SysMemSlicePitch = 0;
+
+	HR(_dxMgr.CurrentDevice()->CreateBuffer(&ibd, &iBuffData, &pBoxIndexBuffer));
+
+	_dxMgr.UnlockMgr();
+}
+
+void BoxDemo::BuildFX()
+{
+
+	std::ifstream fin(_T("color.cso"), std::ios::binary);
+
+	fin.seekg(0, std::ios_base::end);
+	int size = (int)fin.tellg();
+	fin.seekg(0, std::ios_base::beg);
+	std::vector<char> compiledShader(size);
+
+	fin.read(&compiledShader[0], size);
+	fin.close();
+
+	_dxMgr.LockMgr();
+
+	HR(D3DX11CreateEffectFromMemory(&compiledShader[0], size, 0, _dxMgr.CurrentDevice(), &pFX));
+
+	_dxMgr.UnlockMgr();
+
+	pTech = pFX->GetTechniqueByName("ColorTech");
+
+	pfxWorldViewProj = pFX->GetConstantBufferByName("gWorldViewProj")->AsMatrix();
+
+}
+
+void BoxDemo::BuildVertexLayout()
+{
+
+	//create vertex input layout
+
+	D3D11_INPUT_ELEMENT_DESC zeLayout[] = 
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+
+	//Create the input layout
+	_dxMgr.LockMgr();
+
+	D3DX11_PASS_DESC pDesc;
+	pTech->GetPassByIndex(0)->GetDesc(&pDesc);
+	HR(_dxMgr.CurrentDevice()->CreateInputLayout(zeLayout, 2, pDesc.pIAInputSignature, pDesc.IAInputSignatureSize, &pInputLayout));
+
+	_dxMgr.UnlockMgr();
+
+}
 
 
 
@@ -212,7 +340,23 @@ void BoxDemo::HandleMouseMove(WPARAM bState, int x, int y)
 
 
 
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
+	PSTR cmdLine, int showCmd)
+{
+#ifdef _DEBUG
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
 
+	BoxDemo theApp(hInstance);
+
+	if (!theApp.InitApp())
+	{
+		return 0;
+	}
+
+	return theApp.Run();
+
+}
 
 
 

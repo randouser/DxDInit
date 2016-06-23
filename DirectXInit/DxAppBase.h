@@ -44,7 +44,6 @@ public:
 
 	int		  Run();
 
-
 	virtual bool InitApp();
 	virtual bool OnResizeHandler();
 	virtual void ProcSceneUpdate(float _dt) = 0;

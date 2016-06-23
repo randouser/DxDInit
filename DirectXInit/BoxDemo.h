@@ -24,7 +24,7 @@ typedef struct BoxVertex
 
 
 //subclass our base dx framework
-class BoxDemo : DxAppBase
+class BoxDemo : public DxAppBase
 {
 public:
 
